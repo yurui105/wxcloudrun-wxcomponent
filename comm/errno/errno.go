@@ -1,10 +1,15 @@
 package errno
 
+// Errno 错误码结构
+// @Description 接口返回结构
+type Errno = JsonResult
+
 // JsonResult 返回结果，json格式
+// @Description API返回结果
 type JsonResult struct {
-	Code     int         `json:"code"`
-	ErrorMsg string      `json:"errorMsg"`
-	Data     interface{} `json:"data,omitempty"`
+	Code     int         `json:"code" example:"0"`           // 错误码，0表示成功
+	ErrorMsg string      `json:"errorMsg" example:"success"` // 错误信息
+	Data     interface{} `json:"data,omitempty"`             // 返回数据
 }
 
 // Result 返回结果
