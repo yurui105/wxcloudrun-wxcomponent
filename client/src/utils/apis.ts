@@ -1,6 +1,6 @@
 export const HOST = import.meta.env.DEV ? '/api/wxcomponent' : '/wxcomponent'
 
-type IRequestMsg = {
+export type IRequestMsg = {
     url: string
     method: "get" | "post" | "delete" | "put"
 }
@@ -155,3 +155,8 @@ export const uploadFileRequest: IRequestMsg = {
     url: `${HOST}/admin/upload-media`, // 修改服务状态
     method: "post"
 }
+
+export const getPublicationRecordsRequest: IRequestMsg = {
+    url: `${HOST}/admin/publication-records`, // 获取公众号发布记录
+    method: "get"
+} as const;

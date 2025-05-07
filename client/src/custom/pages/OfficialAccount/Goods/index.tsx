@@ -6,10 +6,11 @@ import {
 import { PrimaryTableCol, TableRowData } from 'tdesign-react/es/table/type';
 import { request } from '../../../utils/common';
 import { 
-  publishGetRequest as getPublishRequest,
-  publishSubmitRequest as submitPublishRequest
+  goodsListRequest as getGoodsListRequest,
+  goodsAddRequest as addGoodsRequest,
+  goodsGetRequest as getGoodsRequest
 } from '../../../utils/apis';
-import { PublishItem, PublishListResponse } from '../../../types';
+import { GoodsItem, GoodsListResponse } from '../../../types';
 import styles from './index.module.less';
 
 // 响应数据类型，用于处理noLoginError返回的情况
@@ -19,23 +20,23 @@ interface ResponseData {
   data?: any;
 }
 
-const PublishManagement: React.FC = () => {
-  const [publishList, setPublishList] = useState<PublishItem[]>([]);
+const GoodsManagement: React.FC = () => {
+  const [goodsList, setGoodsList] = useState<GoodsItem[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [appid, setAppid] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [createDialogVisible, setCreateDialogVisible] = useState(false);
-  const [newPublish, setNewPublish] = useState<Partial<PublishItem>>({
+  const [newGoods, setNewGoods] = useState<Partial<GoodsItem>>({
     title: '',
-    content: '',
-    digest: '',
-    thumb_media_id: ''
+    price: 0,
+    description: '',
+    image_url: ''
   });
 
-  // 获取发布列表
-  const fetchPublishList = async () => {
+  // 获取商品列表
+  const fetchGoodsList = async () => {
     if (!appid) {
       MessagePlugin.error('请输入APPID');
       return;
@@ -45,70 +46,99 @@ const PublishManagement: React.FC = () => {
     try {
       const offset = (currentPage - 1) * pageSize;
       const response = await request({
-        request: getPublishRequest,
+        request: getGoodsListRequest,
         data: {
           appid,
           offset,
-          count: pageSize,
-          action: 'list'
+          count: pageSize
         }
       }) as ResponseData;
       
       if (response && response.code === 0 && response.data) {
-        const data = response.data as PublishListResponse;
-        setPublishList(data.publish_list || []);
+        const data = response.data as GoodsListResponse;
+        setGoodsList(data.goods_list || []);
         setTotalCount(data.total_count || 0);
       } else {
-        MessagePlugin.error(response?.errorMsg || '获取发布列表失败');
+        MessagePlugin.error(response?.errorMsg || '获取商品列表失败');
       }
     } catch (error) {
-      console.error('获取发布列表出错:', error);
-      MessagePlugin.error('获取发布列表失败');
+      console.error('获取商品列表出错:', error);
+      MessagePlugin.error('获取商品列表失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // 提交发布
-  const submitPublish = async () => {
+  // 添加商品
+  const addGoods = async () => {
     if (!appid) {
       MessagePlugin.error('请输入APPID');
       return;
     }
     
-    if (!newPublish.title || !newPublish.content) {
-      MessagePlugin.error('请填写完整的发布信息');
+    if (!newGoods.title || !newGoods.price || !newGoods.description) {
+      MessagePlugin.error('请填写完整的商品信息');
       return;
     }
     
     setLoading(true);
     try {
       const response = await request({
-        request: submitPublishRequest,
+        request: addGoodsRequest,
         data: {
           appid,
-          publish: newPublish
+          goods: newGoods
         }
       }) as ResponseData;
       
       if (response && response.code === 0) {
-        MessagePlugin.success('提交发布成功');
+        MessagePlugin.success('添加商品成功');
         setCreateDialogVisible(false);
         // 重置表单
-        setNewPublish({
+        setNewGoods({
           title: '',
-          content: '',
-          digest: '',
-          thumb_media_id: ''
+          price: 0,
+          description: '',
+          image_url: ''
         });
         // 刷新列表
-        fetchPublishList();
+        fetchGoodsList();
       } else {
-        MessagePlugin.error(response?.errorMsg || '提交发布失败');
+        MessagePlugin.error(response?.errorMsg || '添加商品失败');
       }
     } catch (error) {
-      console.error('提交发布出错:', error);
-      MessagePlugin.error('提交发布失败');
+      console.error('添加商品出错:', error);
+      MessagePlugin.error('添加商品失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 删除商品
+  const deleteGoods = async (goods: GoodsItem) => {
+    if (!goods) return;
+    
+    setLoading(true);
+    try {
+      const response = await request({
+        request: getGoodsRequest,
+        data: {
+          appid,
+          goods_id: goods.goods_id,
+          action: 'delete'
+        }
+      }) as ResponseData;
+      
+      if (response && response.code === 0) {
+        MessagePlugin.success('删除成功');
+        // 刷新列表
+        fetchGoodsList();
+      } else {
+        MessagePlugin.error(response?.errorMsg || '删除失败');
+      }
+    } catch (error) {
+      console.error('删除商品出错:', error);
+      MessagePlugin.error('删除失败');
     } finally {
       setLoading(false);
     }
@@ -117,52 +147,56 @@ const PublishManagement: React.FC = () => {
   // 表格列定义
   const columns: PrimaryTableCol<TableRowData>[] = [
     {
-      title: '标题',
+      title: '商品名称',
       colKey: 'title',
       render: (props) => {
-        const row = props.row as PublishItem;
+        const row = props.row as GoodsItem;
         return row.title;
       }
     },
     {
-      title: '摘要',
-      colKey: 'digest',
+      title: '价格',
+      colKey: 'price',
       render: (props) => {
-        const row = props.row as PublishItem;
-        return row.digest;
+        const row = props.row as GoodsItem;
+        return `¥${row.price.toFixed(2)}`;
       }
     },
     {
-      title: '状态',
-      colKey: 'status',
+      title: '描述',
+      colKey: 'description',
       render: (props) => {
-        const row = props.row as PublishItem;
-        return row.status === 0 ? '待发布' : row.status === 1 ? '已发布' : '发布失败';
+        const row = props.row as GoodsItem;
+        return row.description;
       }
     },
     {
-      title: '创建时间',
-      colKey: 'create_time',
+      title: '图片',
+      colKey: 'image_url',
       render: (props) => {
-        const row = props.row as PublishItem;
-        return new Date(row.create_time * 1000).toLocaleString();
+        const row = props.row as GoodsItem;
+        return row.image_url ? (
+          <img 
+            src={row.image_url} 
+            alt={row.title} 
+            style={{ width: '50px', height: '50px', objectFit: 'cover' }} 
+          />
+        ) : '无图片';
       }
     },
     {
       title: '操作',
       colKey: 'operation',
       render: (props) => {
-        const row = props.row as PublishItem;
+        const row = props.row as GoodsItem;
         return (
           <div>
             <Button 
-              theme="primary" 
+              theme="danger" 
               variant="text" 
-              onClick={() => {
-                // 查看详情
-              }}
+              onClick={() => deleteGoods(row)}
             >
-              查看
+              删除
             </Button>
           </div>
         );
@@ -179,7 +213,7 @@ const PublishManagement: React.FC = () => {
   // 监听页码变化重新获取数据
   useEffect(() => {
     if (appid) {
-      fetchPublishList();
+      fetchGoodsList();
     }
   }, [currentPage, pageSize, appid]);
 
@@ -195,13 +229,13 @@ const PublishManagement: React.FC = () => {
             />
           </Form.FormItem>
           <Form.FormItem>
-            <Button theme="primary" onClick={fetchPublishList}>查询</Button>
+            <Button theme="primary" onClick={fetchGoodsList}>查询</Button>
             <Button 
               theme="primary" 
               style={{ marginLeft: '8px' }}
               onClick={() => setCreateDialogVisible(true)}
             >
-              新建发布
+              添加商品
             </Button>
           </Form.FormItem>
         </Form>
@@ -209,9 +243,9 @@ const PublishManagement: React.FC = () => {
 
       <Loading loading={loading}>
         <Table
-          data={publishList}
+          data={goodsList}
           columns={columns}
-          rowKey="publish_id"
+          rowKey="goods_id"
           pagination={{
             current: currentPage,
             pageSize: pageSize,
@@ -224,47 +258,48 @@ const PublishManagement: React.FC = () => {
         />
       </Loading>
 
-      {/* 新建发布对话框 */}
+      {/* 添加商品对话框 */}
       <Dialog
-        header="新建发布"
+        header="添加商品"
         visible={createDialogVisible}
         onClose={() => setCreateDialogVisible(false)}
         width={600}
         footer={
           <div>
             <Button onClick={() => setCreateDialogVisible(false)}>取消</Button>
-            <Button theme="primary" loading={loading} onClick={submitPublish}>确定</Button>
+            <Button theme="primary" loading={loading} onClick={addGoods}>确定</Button>
           </div>
         }
       >
         <div className={styles.createDialog}>
-          <Form.FormItem label="标题">
+          <Form.FormItem label="商品名称">
             <Input 
-              value={newPublish.title} 
-              onChange={(value) => setNewPublish({ ...newPublish, title: String(value) })}
-              placeholder="请输入标题"
+              value={newGoods.title} 
+              onChange={(value) => setNewGoods({ ...newGoods, title: String(value) })}
+              placeholder="请输入商品名称"
             />
           </Form.FormItem>
-          <Form.FormItem label="摘要">
+          <Form.FormItem label="价格">
             <Input 
-              value={newPublish.digest} 
-              onChange={(value) => setNewPublish({ ...newPublish, digest: String(value) })}
-              placeholder="请输入摘要"
+              type="number"
+              value={newGoods.price} 
+              onChange={(value) => setNewGoods({ ...newGoods, price: Number(value) })}
+              placeholder="请输入商品价格"
             />
           </Form.FormItem>
-          <Form.FormItem label="内容">
+          <Form.FormItem label="描述">
             <Textarea 
-              value={newPublish.content} 
-              onChange={(value) => setNewPublish({ ...newPublish, content: String(value) })}
-              placeholder="请输入内容"
-              autosize={{ minRows: 5, maxRows: 10 }}
+              value={newGoods.description} 
+              onChange={(value) => setNewGoods({ ...newGoods, description: String(value) })}
+              placeholder="请输入商品描述"
+              autosize={{ minRows: 3, maxRows: 6 }}
             />
           </Form.FormItem>
-          <Form.FormItem label="封面图">
+          <Form.FormItem label="图片URL">
             <Input 
-              value={newPublish.thumb_media_id} 
-              onChange={(value) => setNewPublish({ ...newPublish, thumb_media_id: String(value) })}
-              placeholder="请输入封面图媒体ID"
+              value={newGoods.image_url} 
+              onChange={(value) => setNewGoods({ ...newGoods, image_url: String(value) })}
+              placeholder="请输入商品图片URL"
             />
           </Form.FormItem>
         </div>
@@ -273,4 +308,4 @@ const PublishManagement: React.FC = () => {
   );
 };
 
-export default PublishManagement; 
+export default GoodsManagement; 

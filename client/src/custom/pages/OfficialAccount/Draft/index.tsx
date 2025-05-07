@@ -5,38 +5,21 @@ import {
 } from 'tdesign-react';
 import { request } from '../../../utils/common';
 import { 
-  getDraftListRequest, 
-  getDraftCountRequest, 
-  addDraftRequest 
+  draftBatchGetRequest as getDraftListRequest, 
+  draftCountRequest as getDraftCountRequest, 
+  draftAddRequest as addDraftRequest 
 } from '../../../utils/apis';
+import { DraftItem, NewsItem, DraftListResponse, DraftCountResponse } from '../../../types';
 import styles from './index.module.less';
 
-interface DraftItem {
-  media_id: string;
-  update_time: number;
-  content: {
-    news_item: Array<{
-      title: string;
-      author: string;
-      digest: string;
-      content: string;
-      content_source_url: string;
-      thumb_media_id: string;
-      url: string;
-    }>;
-  };
+// 响应数据类型，用于处理noLoginError返回的情况
+interface ResponseData {
+  code: number;
+  errorMsg?: string;
+  data?: any;
 }
 
-interface NewArticle {
-  title: string;
-  author: string;
-  digest: string;
-  content: string;
-  content_source_url: string;
-  thumb_media_id: string;
-  need_open_comment: number;
-  only_fans_can_comment: number;
-}
+interface NewArticle extends NewsItem {}
 
 const DraftManagement: React.FC = () => {
   const [draftList, setDraftList] = useState<DraftItem[]>([]);
@@ -77,11 +60,12 @@ const DraftManagement: React.FC = () => {
           count: pageSize,
           no_content: 0
         }
-      });
+      }) as ResponseData;
       
       if (response && response.code === 0 && response.data) {
-        setDraftList(response.data.item || []);
-        setTotalCount(response.data.total_count || 0);
+        const data = response.data as DraftListResponse;
+        setDraftList(data.item || []);
+        setTotalCount(data.total_count || 0);
       } else {
         MessagePlugin.error(response?.errorMsg || '获取草稿列表失败');
       }
@@ -101,10 +85,11 @@ const DraftManagement: React.FC = () => {
       const response = await request({
         request: getDraftCountRequest,
         data: { appid }
-      });
+      }) as ResponseData;
       
       if (response && response.code === 0 && response.data) {
-        setTotalCount(response.data.total_count || 0);
+        const data = response.data as DraftCountResponse;
+        setTotalCount(data.total_count || 0);
       }
     } catch (error) {
       console.error('获取草稿总数出错:', error);
@@ -131,7 +116,7 @@ const DraftManagement: React.FC = () => {
           appid,
           articles: [newArticle]
         }
-      });
+      }) as ResponseData;
       
       if (response && response.code === 0) {
         MessagePlugin.success('草稿创建成功');

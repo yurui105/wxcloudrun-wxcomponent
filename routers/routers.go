@@ -5,8 +5,8 @@ import (
 
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/admin"
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/authpage"
-	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/c_officialaccount"
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/innerservice"
+	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/official-account"
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/proxy"
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/api/wxcallback"
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/middleware"
@@ -31,7 +31,7 @@ func Init() *gin.Engine {
 	wxcallback.Routers(r)
 
 	// 微管家
-	Include(admin.Routers, authpage.Routers, c_officialaccount.Routers)
+	Include(admin.Routers, authpage.Routers, official_account.Routers)
 	g := r.Group("/wxcomponent")
 	for _, opt := range options {
 		opt(g)

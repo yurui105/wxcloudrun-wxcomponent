@@ -1,21 +1,41 @@
 import React, { useState } from 'react';
 import { Tabs, Form, Input, Button, DatePicker, MessagePlugin, Loading, Table } from 'tdesign-react';
+import { TabValue as TDTabValue } from 'tdesign-react/es/tabs/type';
 import { request } from '../../../utils/common';
 import { 
   getArticleSummaryRequest,
   getArticleTotalRequest,
-  getUserReadRequest,
-  getUserReadHourRequest,
-  getUserShareRequest,
-  getUserShareHourRequest,
-  getPublisherAdposGeneralRequest,
-  getPublisherCpsGeneralRequest,
-  getPublisherSettlementRequest
+  getUserReadSummaryRequest,
+  getUserShareHourlyRequest,
+  getUserShareSummaryRequest
 } from '../../../utils/apis';
+import { 
+  ArticleSummaryItem, 
+  ArticleTotalItem, 
+  UserReadSummaryItem,
+  UserShareSummaryItem,
+  UserShareHourlyItem
+} from '../../../types';
 import styles from './index.module.less';
 
 // 定义Tab类型
-type TabValue = 'articleSummary' | 'articleTotal' | 'userRead' | 'userReadHour' | 'userShare' | 'userShareHour' | 'adpos' | 'cps' | 'settlement';
+type TabValue = 'articleSummary' | 'articleTotal' | 'userRead' | 'userShare' | 'userShareHour';
+
+// 定义API数据类型映射
+type ApiDataTypeMap = {
+  articleSummary: ArticleSummaryItem[];
+  articleTotal: ArticleTotalItem[];
+  userRead: UserReadSummaryItem[];
+  userShare: UserShareSummaryItem[];
+  userShareHour: UserShareHourlyItem[];
+};
+
+// 响应数据类型，用于处理noLoginError返回的情况
+interface ResponseData {
+  code: number;
+  errorMsg?: string;
+  data?: any;
+}
 
 const AnalyticsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabValue>('articleSummary');
@@ -61,32 +81,24 @@ const AnalyticsPage: React.FC = () => {
           requestApi = getArticleTotalRequest;
           break;
         case 'userRead':
-          requestApi = getUserReadRequest;
-          break;
-        case 'userReadHour':
-          requestApi = getUserReadHourRequest;
+          requestApi = getUserReadSummaryRequest;
           break;
         case 'userShare':
-          requestApi = getUserShareRequest;
+          requestApi = getUserShareSummaryRequest;
           break;
         case 'userShareHour':
-          requestApi = getUserShareHourRequest;
+          requestApi = getUserShareHourlyRequest;
           break;
-        case 'adpos':
-          requestApi = getPublisherAdposGeneralRequest;
-          break;
-        case 'cps':
-          requestApi = getPublisherCpsGeneralRequest;
-          break;
-        case 'settlement':
-          requestApi = getPublisherSettlementRequest;
-          break;
+        default:
+          MessagePlugin.error('未知的数据类型');
+          setLoading(false);
+          return;
       }
 
       const response = await request({
         request: requestApi,
         data: params
-      });
+      }) as ResponseData;
 
       if (response && response.code === 0 && response.data) {
         // 根据不同API处理响应数据
@@ -150,7 +162,6 @@ const AnalyticsPage: React.FC = () => {
         break;
         
       case 'userRead':
-      case 'userReadHour':
       case 'userShare':
       case 'userShareHour':
         if (data.list && data.list.length > 0) {
@@ -158,8 +169,8 @@ const AnalyticsPage: React.FC = () => {
           const firstItem = data.list[0];
           const dynamicColumns: any[] = [{ title: '日期', colKey: 'ref_date' }];
           
-          // 对于userReadHour和userShareHour添加小时列
-          if (activeTab === 'userReadHour' || activeTab === 'userShareHour') {
+          // 对于userShareHour添加小时列
+          if (activeTab === 'userShareHour') {
             dynamicColumns.push({ title: '小时', colKey: 'ref_hour' });
           }
           
@@ -181,30 +192,6 @@ const AnalyticsPage: React.FC = () => {
         }
         break;
         
-      case 'adpos':
-      case 'cps':
-      case 'settlement':
-        if (data.list && data.list.length > 0) {
-          // 动态生成列
-          const firstItem = data.list[0];
-          const dynamicColumns: any[] = [];
-          
-          // 添加数据列
-          Object.keys(firstItem).forEach(key => {
-            // 格式化列标题
-            let title = key.replace(/_/g, ' ');
-            title = title.charAt(0).toUpperCase() + title.slice(1);
-            dynamicColumns.push({ title, colKey: key });
-          });
-          
-          setColumns(dynamicColumns);
-          setTableData(data.list);
-        } else {
-          MessagePlugin.info('暂无数据');
-          setTableData([]);
-        }
-        break;
-        
       default:
         setTableData([]);
         setColumns([]);
@@ -212,8 +199,8 @@ const AnalyticsPage: React.FC = () => {
   };
 
   // Tab切换
-  const handleTabChange = (value: TabValue) => {
-    setActiveTab(value);
+  const handleTabChange = (value: TDTabValue) => {
+    setActiveTab(value as TabValue);
     // 清空当前数据
     setTableData([]);
     setColumns([]);
@@ -252,40 +239,37 @@ const AnalyticsPage: React.FC = () => {
         </Form>
       </div>
 
-      <Tabs 
-        value={activeTab} 
-        onChange={(value) => handleTabChange(value as TabValue)}
-      >
-        <Tabs.TabPanel value="articleSummary" label="文章每日数据" />
-        <Tabs.TabPanel value="articleTotal" label="图文群发总数据" />
-        <Tabs.TabPanel value="userRead" label="用户阅读数据" />
-        <Tabs.TabPanel value="userReadHour" label="用户阅读分时数据" />
-        <Tabs.TabPanel value="userShare" label="用户分享数据" />
-        <Tabs.TabPanel value="userShareHour" label="用户分享分时数据" />
-        <Tabs.TabPanel value="adpos" label="广告位数据" />
-        <Tabs.TabPanel value="cps" label="返佣商品数据" />
-        <Tabs.TabPanel value="settlement" label="结算收入数据" />
-      </Tabs>
+      <div className={styles.tabsContainer}>
+        <Tabs value={activeTab} onChange={handleTabChange}>
+          <Tabs.TabPanel value="articleSummary" label="图文群发每日数据" />
+          <Tabs.TabPanel value="articleTotal" label="图文群发总数据" />
+          <Tabs.TabPanel value="userRead" label="图文统计数据" />
+          <Tabs.TabPanel value="userShare" label="图文分享数据" />
+          <Tabs.TabPanel value="userShareHour" label="图文分享小时数据" />
+        </Tabs>
+      </div>
 
-      <div className={styles.tableContainer}>
-        <Loading loading={loading}>
+      <Loading loading={loading}>
+        <div className={styles.tableContainer}>
           {tableData.length > 0 ? (
             <Table
               data={tableData}
-              columns={columns as any}
-              rowKey="ref_date"
+              columns={columns}
+              rowKey="id"
+              bordered
+              stripe
+              size="small"
               pagination={{
                 pageSize: 10,
-                showJumper: true,
+                total: tableData.length,
+                pageSizeOptions: [10, 20, 50]
               }}
             />
           ) : (
-            <div className={styles.emptyData}>
-              请选择条件并点击查询按钮获取数据
-            </div>
+            !loading && <div className={styles.noData}>暂无数据</div>
           )}
-        </Loading>
-      </div>
+        </div>
+      </Loading>
     </div>
   );
 };

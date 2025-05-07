@@ -70,10 +70,10 @@ const ImageUpload: React.FC = () => {
         <Loading loading={loading}>
           <Form labelWidth={80}>
             <Form.FormItem label="APPID">
-              <Input 
-                value={appid} 
-                onChange={(value) => setAppid(String(value))} 
-                placeholder="请输入公众号APPID" 
+              <Input
+                value={appid}
+                onChange={(value) => setAppid(String(value))}
+                placeholder="请输入公众号APPID"
               />
             </Form.FormItem>
             <Form.FormItem label="图片">
@@ -114,4 +114,4 @@ const ImageUpload: React.FC = () => {
   );
 };
 
-export default ImageUpload; 
+export default ImageUpload;
