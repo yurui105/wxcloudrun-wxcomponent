@@ -82,16 +82,38 @@ func APIGetMedia(c *gin.Context) {
 }
 
 // APIUploadMaterialImage 上传永久图片
-func APIUploadMaterialImage(c *gin.Context) {
+func APIUploadMaterialImage(c *gin.Context, data []byte) {
 	app, err := GetOfficialAccountAppByContext(c)
 	if err != nil {
 		return
 	}
-	res, err := app.Material.UploadImage(c.Request.Context(), "./resource/cloud.jpg")
-
+	// 获取图片数据
+	file, err := c.FormFile("media")
 	if err != nil {
-		panic(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No image uploaded"})
+		return
 	}
+
+	fileContent, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer fileContent.Close()
+
+	imageData, err := io.ReadAll(fileContent)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 调用上传方法
+	res, err := app.Material.UploadImageByData(c.Request.Context(), imageData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, res)
 }
 

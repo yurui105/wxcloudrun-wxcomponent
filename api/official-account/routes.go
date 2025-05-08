@@ -8,6 +8,9 @@ func Routers(g *gin.RouterGroup) {
 
 	officialRouter := g.Group("/official-account")
 	{
+		//公众号列表
+		officialRouter.GET("/account_info", GetOfficialAccountInfo)
+
 		// Base
 		officialRouter.GET("/base/clearQuota", ClearQuota)
 		officialRouter.GET("/base/callbackIP", GetCallbackIP)
