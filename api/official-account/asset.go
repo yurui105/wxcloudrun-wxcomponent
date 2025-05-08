@@ -82,7 +82,7 @@ func APIGetMedia(c *gin.Context) {
 }
 
 // APIUploadMaterialImage 上传永久图片
-func APIUploadMaterialImage(c *gin.Context, data []byte) {
+func APIUploadMaterialImage(c *gin.Context) {
 	app, err := GetOfficialAccountAppByContext(c)
 	if err != nil {
 		return
