@@ -123,7 +123,7 @@ func getAuthorizerList(offset, count int, resp *getAuthorizerListResp) error {
 	return nil
 }
 
-func getAuthorizerListHandler(c *gin.Context) {
+func GetAuthorizerListHandler(c *gin.Context) {
 	offset, err := strconv.Atoi(c.DefaultQuery("offset", "0"))
 	if err != nil {
 		c.JSON(http.StatusOK, errno.ErrInvalidParam.WithData(err.Error()))

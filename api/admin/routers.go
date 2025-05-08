@@ -31,7 +31,7 @@ func Routers(e *gin.RouterGroup) {
 
 	// 授权小程序管理
 	g.POST("/pull-authorizer-list", pullAuthorizerListHandler)
-	g.GET("/authorizer-list", getAuthorizerListHandler)
+	g.GET("/authorizer-list", GetAuthorizerListHandler)
 
 	// 代开发小程序管理
 	g.GET("/dev-weapp-list", getDevWeAppListHandler)
