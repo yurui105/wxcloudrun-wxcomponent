@@ -1,13 +1,9 @@
 package official_account
 
 import (
-	"context"
-	"github.com/ArtisanCloud/PowerLibs/v3/object"
-	"github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount/material/response"
 	"io"
 	"net/http"
 
-	"github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount/material"
 	"github.com/ArtisanCloud/PowerWeChat/v3/src/officialAccount/material/request"
 	"github.com/gin-gonic/gin"
 )
@@ -87,81 +83,12 @@ func APIGetMedia(c *gin.Context) {
 
 // APIUploadMaterialImage 上传永久图片
 func APIUploadMaterialImage(c *gin.Context) {
-	app, err := GetOfficialAccountAppByContext(c)
-	if err != nil {
-		return
-	}
-	// 获取图片数据
-	file, err := c.FormFile("media")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image uploaded"})
-		return
-	}
-
-	fileContent, err := file.Open()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer fileContent.Close()
-
-	imageData, err := io.ReadAll(fileContent)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 调用上传方法
-	res, err := app.Material.UploadImageByData(c.Request.Context(), imageData)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, res)
-}
-
-// UploadImageByData 辅助函数，为 material.Client 提供额外功能
-func UploadImageByData(client *material.Client, ctx context.Context, data []byte) (*response.ResponseMaterialAddMaterial, error) {
-	result := &response.ResponseMaterialAddMaterial{}
-	_, err := client.UploadByData(ctx, "news_image", "image", data, &object.StringMap{}, result)
-	return result, err
+	ImageUpload(c, "image")
 }
 
 // APIUploadArticleImage 上传图文消息内的图片获取URL
 func APIUploadArticleImage(c *gin.Context) {
-	app, err := GetOfficialAccountAppByContext(c)
-	if err != nil {
-		return
-	}
-	// 获取图片数据
-	file, err := c.FormFile("media")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No image uploaded"})
-		return
-	}
-
-	fileContent, err := file.Open()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer fileContent.Close()
-
-	imageData, err := io.ReadAll(fileContent)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 使用辅助函数
-	res, err := UploadImageByData(app.Material, c.Request.Context(), imageData)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, res)
+	ImageUpload(c, "image")
 }
 
 // APIUploadMaterialVoice 上传永久语音
