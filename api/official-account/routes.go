@@ -1,12 +1,22 @@
 package official_account
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 func Routers(g *gin.RouterGroup) {
 
 	officialRouter := g.Group("/official-account")
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "HEAD", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	config.AllowCredentials = true
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.MaxAge = 12 * time.Hour
+	officialRouter.Use(cors.New(config))
 	{
 		//公众号列表
 		officialRouter.GET("/account_info", GetOfficialAccountInfo)
