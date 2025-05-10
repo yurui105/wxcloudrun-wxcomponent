@@ -163,7 +163,7 @@ func APIUploadArticleImageByUrl(c *gin.Context) {
 			}
 
 			// 上传图片到微信
-			result, err := UploadArticleImageToWeixin(c, appid, fileHeader)
+			result, err := UploadImageToWeixin(c, appid, "image", fileHeader)
 			if err != nil {
 				log.Error("上传图片到微信失败: " + err.Error() + ", URL: " + url)
 				mutex.Lock()
