@@ -1,14 +1,15 @@
 import React from 'react';
 import { Layout, Tabs } from 'tdesign-react';
 import ApiTester from '../../components/ApiTester';
-import { 
-  uploadImageRequest, 
-  uploadVoiceRequest, 
-  uploadVideoRequest, 
-  uploadThumbRequest, 
+import {
+  uploadImageRequest,
+  uploadVoiceRequest,
+  uploadVideoRequest,
+  uploadThumbRequest,
   getMediaRequest,
   uploadMaterialImageRequest,
   uploadArticleImageRequest,
+  uploadArticleImageByUrlRequest,
   uploadMaterialVoiceRequest,
   uploadMaterialVideoRequest,
   uploadMaterialThumbRequest,
@@ -115,6 +116,18 @@ const AssetApiPage: React.FC = () => {
           />
         </Tabs.TabPanel>
 
+        <Tabs.TabPanel value="uploadArticleImageByUrl" label="通过URL上传图文消息内图片">
+          <ApiTester
+            apiTitle="通过URL上传图文消息内图片"
+            apiDescription="从URL下载图片并上传到微信服务器，获取图片URL"
+            requestMsg={uploadArticleImageByUrlRequest}
+            requestParams={{
+              images: [] // 图片URL列表
+            }}
+            requiredParams={['images']}
+          />
+        </Tabs.TabPanel>
+
         <Tabs.TabPanel value="uploadMaterialVoice" label="上传永久语音">
           <ApiTester
             apiTitle="上传永久语音素材"
@@ -184,4 +197,4 @@ const AssetApiPage: React.FC = () => {
   );
 };
 
-export default AssetApiPage; 
+export default AssetApiPage;

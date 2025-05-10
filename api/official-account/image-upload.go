@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/comm/errno"
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/comm/log"
@@ -72,6 +73,84 @@ func UploadImageToWeixin(ctx *gin.Context, appid, mediaType string, fileHeader *
 	}
 	// 构建微信API请求URL
 	apiURL := "https://api.weixin.qq.com/cgi-bin/material/add_material?access_token=" + token + "&type=" + mediaType
+
+	return ForwardFileToWeixin(ctx, apiURL, fileHeader)
+}
+
+func DownloadImage(url string) (*multipart.FileHeader, error) {
+	// 发送HTTP GET请求获取图片
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, errors.New("获取图片失败: " + err.Error())
+	}
+	defer resp.Body.Close()
+
+	// 检查响应状态
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("获取图片失败，HTTP状态码: " + resp.Status)
+	}
+
+	// 读取图片内容
+	imageData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.New("读取图片内容失败: " + err.Error())
+	}
+
+	// 从URL中提取文件名
+	filename := "image.jpg" // 默认文件名
+	parts := strings.Split(url, "/")
+	if len(parts) > 0 {
+		lastPart := parts[len(parts)-1]
+		if lastPart != "" {
+			// 如果URL最后部分包含查询参数，去除它们
+			if idx := strings.Index(lastPart, "?"); idx > 0 {
+				lastPart = lastPart[:idx]
+			}
+			if lastPart != "" {
+				filename = lastPart
+			}
+		}
+	}
+
+	// 创建一个内存文件
+	buffer := bytes.NewBuffer(imageData)
+
+	// 创建multipart.FileHeader
+	header := &multipart.FileHeader{
+		Filename: filename,
+		Size:     int64(len(imageData)),
+	}
+
+	// 将文件内容存储到FileHeader中
+	formFile, err := header.Open()
+	if formFile != nil {
+		defer formFile.Close()
+	}
+	if err != nil {
+		return nil, errors.New("创建文件头失败: " + err.Error())
+	}
+
+	// 写入文件内容
+	writer, ok := formFile.(io.Writer)
+	if !ok {
+		return nil, errors.New("无法写入文件内容")
+	}
+
+	_, err = io.Copy(writer, buffer)
+	if err != nil {
+		return nil, errors.New("写入文件内容失败: " + err.Error())
+	}
+
+	return header, nil
+}
+
+func UploadArticleImageToWeixin(ctx *gin.Context, appid string, fileHeader *multipart.FileHeader) (*ImageUploadResult, error) {
+	token, err := wx.GetAuthorizerAccessToken(appid)
+	if err != nil {
+		return nil, errors.New("获取access_token失败: " + err.Error())
+	}
+	// 构建微信API请求URL
+	apiURL := "https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=" + token
 
 	return ForwardFileToWeixin(ctx, apiURL, fileHeader)
 }

@@ -69,6 +69,11 @@ export const uploadArticleImageRequest: IRequestMsg = {
     method: 'post'
 };
 
+export const uploadArticleImageByUrlRequest: IRequestMsg = {
+    url: `${HOST}/official-account/material/uploadArticleImageByUrl`,
+    method: 'post'
+};
+
 export const uploadMaterialVoiceRequest: IRequestMsg = {
     url: `${HOST}/official-account/material/uploadVoice`,
     method: 'post'
