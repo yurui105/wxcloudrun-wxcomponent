@@ -39,6 +39,7 @@ func Routers(g *gin.RouterGroup) {
 		officialRouter.POST("/material/uploadImage", APIUploadMaterialImage)
 		officialRouter.POST("/material/uploadArticleImage", APIUploadArticleImage)
 		officialRouter.POST("/material/uploadArticleImageByUrl", APIUploadArticleImageByUrl)
+		officialRouter.POST("/material/uploadArticleThumb", APIUploadArticleThumb)
 		officialRouter.POST("/material/uploadVoice", APIUploadMaterialVoice)
 		officialRouter.POST("/material/uploadVideo", APIUploadMaterialVideo)
 		officialRouter.POST("/material/uploadThumb", APIUploadMaterialThumb)

@@ -94,6 +94,10 @@ func APIUploadArticleImage(c *gin.Context) {
 	ImageUpload(c, "image")
 }
 
+func APIUploadArticleThumb(c *gin.Context) {
+	ImageUpload(c, "thumb")
+}
+
 // APIUploadArticleImageByUrl 通过URL上传图文消息内的图片
 // @Summary      通过URL上传图文消息内的图片
 // @Description  从URL下载图片并上传到微信服务器，获取图片URL
