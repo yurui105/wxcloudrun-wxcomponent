@@ -77,23 +77,24 @@ func UploadImageToWeixin(ctx *gin.Context, appid, mediaType string, fileHeader *
 	return ForwardFileToWeixin(ctx, apiURL, fileHeader)
 }
 
+// DownloadImage 从URL下载图片并创建一个内存中的文件表示
 func DownloadImage(url string) (*multipart.FileHeader, error) {
 	// 发送HTTP GET请求获取图片
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, errors.New("获取图片失败: " + err.Error())
+		return nil, errors.New("获取图片失败: " + err.Error() + ", URL: " + url)
 	}
 	defer resp.Body.Close()
 
 	// 检查响应状态
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("获取图片失败，HTTP状态码: " + resp.Status)
+		return nil, errors.New("获取图片失败，HTTP状态码: " + resp.Status + ", URL: " + url)
 	}
 
 	// 读取图片内容
 	imageData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, errors.New("读取图片内容失败: " + err.Error())
+		return nil, errors.New("读取图片内容失败: " + err.Error() + ", URL: " + url)
 	}
 
 	// 从URL中提取文件名
@@ -112,34 +113,19 @@ func DownloadImage(url string) (*multipart.FileHeader, error) {
 		}
 	}
 
-	// 创建一个内存文件
-	buffer := bytes.NewBuffer(imageData)
-
-	// 创建multipart.FileHeader
+	// 创建一个自定义的FileHeader
 	header := &multipart.FileHeader{
 		Filename: filename,
 		Size:     int64(len(imageData)),
 	}
 
-	// 将文件内容存储到FileHeader中
-	formFile, err := header.Open()
-	if formFile != nil {
-		defer formFile.Close()
+	// 将图片数据存储在header的Header字段中
+	if header.Header == nil {
+		header.Header = make(map[string][]string)
 	}
-	if err != nil {
-		return nil, errors.New("创建文件头失败: " + err.Error())
-	}
-
-	// 写入文件内容
-	writer, ok := formFile.(io.Writer)
-	if !ok {
-		return nil, errors.New("无法写入文件内容")
-	}
-
-	_, err = io.Copy(writer, buffer)
-	if err != nil {
-		return nil, errors.New("写入文件内容失败: " + err.Error())
-	}
+	// 将图片数据转换为字符串并存储在header中
+	// 注意：这里我们不存储原始数据，而是存储URL，在需要时重新下载
+	header.Header.Set("X-Image-URL", url)
 
 	return header, nil
 }
@@ -157,17 +143,37 @@ func UploadArticleImageToWeixin(ctx *gin.Context, appid string, fileHeader *mult
 
 // ForwardFileToWeixin 转发文件到微信服务器
 func ForwardFileToWeixin(ctx *gin.Context, apiURL string, fileHeader *multipart.FileHeader) (*ImageUploadResult, error) {
-	// 打开用户上传的文件
-	file, err := fileHeader.Open()
-	if err != nil {
-		return nil, errors.New("打开上传文件失败: " + err.Error())
-	}
-	defer file.Close()
+	var fileContent []byte
+	var err error
 
-	// 读取文件内容
-	fileContent, err := io.ReadAll(file)
-	if err != nil {
-		return nil, errors.New("读取上传文件内容失败: " + err.Error())
+	// 检查是否是从URL下载的图片
+	imageURL := fileHeader.Header.Get("X-Image-URL")
+	if imageURL != "" {
+		// 这是一个从URL下载的图片，我们需要重新下载
+		resp, err := http.Get(imageURL)
+		if err != nil {
+			return nil, errors.New("重新下载图片失败: " + err.Error() + ", URL: " + imageURL)
+		}
+		defer resp.Body.Close()
+
+		// 读取图片内容
+		fileContent, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.New("读取图片内容失败: " + err.Error() + ", URL: " + imageURL)
+		}
+	} else {
+		// 这是一个普通的上传文件，直接打开并读取内容
+		file, err := fileHeader.Open()
+		if err != nil {
+			return nil, errors.New("打开上传文件失败: " + err.Error())
+		}
+		defer file.Close()
+
+		// 读取文件内容
+		fileContent, err = io.ReadAll(file)
+		if err != nil {
+			return nil, errors.New("读取上传文件内容失败: " + err.Error())
+		}
 	}
 
 	// 创建一个buffer用于构建multipart请求
