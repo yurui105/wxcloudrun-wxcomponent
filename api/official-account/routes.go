@@ -94,7 +94,7 @@ func Routers(g *gin.RouterGroup) {
 		officialRouter.GET("/customerServiceSession/waiting", CustomerSessionWaiting)
 
 		// 草稿发布
-		officialRouter.GET("/publish/draftAdd", APIDraftAdd)
+		officialRouter.POST("/publish/draftAdd", APIDraftAdd)
 		officialRouter.GET("/publish/draftGet", APIDraftGet)
 		officialRouter.GET("/publish/draftDelete", APIDraftDelete)
 		officialRouter.GET("/publish/draftUpdate", APIDraftUpdate)

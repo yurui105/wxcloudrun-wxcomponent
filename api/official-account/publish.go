@@ -8,31 +8,67 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// APIDraftAdd  获取所有客服
+// DraftAddRequest 新建草稿请求结构体
+type DraftAddRequest struct {
+	Articles []ArticleRequest `json:"articles" binding:"required"`
+}
+
+// ArticleRequest 文章请求结构体
+type ArticleRequest struct {
+	Title              string `json:"title" binding:"required"`
+	Author             string `json:"author"`
+	Digest             string `json:"digest"`
+	Content            string `json:"content" binding:"required"`
+	ContentSourceUrl   string `json:"content_source_url"`
+	ThumbMediaId       string `json:"thumb_media_id"`
+	NeedOpenComment    int    `json:"need_open_comment"`
+	OnlyFansCanComment int    `json:"only_fans_can_comment"`
+}
+
+// buildDraftAddRequest 构建草稿添加请求参数
+func buildDraftAddRequest(req *DraftAddRequest) *request.RequestDraftAdd {
+	articles := make([]*request.Article, len(req.Articles))
+	for i, article := range req.Articles {
+		articles[i] = &request.Article{
+			Title:              article.Title,
+			Author:             article.Author,
+			Digest:             article.Digest,
+			Content:            article.Content,
+			ContentSourceUrl:   article.ContentSourceUrl,
+			ThumbMediaId:       article.ThumbMediaId,
+			NeedOpenComment:    article.NeedOpenComment,
+			OnlyFansCanComment: article.OnlyFansCanComment,
+		}
+	}
+	return &request.RequestDraftAdd{
+		Articles: articles,
+	}
+}
+
+// APIDraftAdd  新建草稿
 func APIDraftAdd(ctx *gin.Context) {
 	app, err := GetOfficialAccountAppByContext(ctx)
 	if err != nil {
 		return
 	}
-	data, err := app.Publish.DraftAdd(ctx.Request.Context(), &request.RequestDraftAdd{
-		Articles: []*request.Article{
-			&request.Article{
-				Title:              "testTitle",
-				Author:             "testAuthor",
-				Digest:             "testDigest",
-				Content:            "testContent",
-				ContentSourceUrl:   "test url",
-				ThumbMediaId:       "test",
-				NeedOpenComment:    0,
-				OnlyFansCanComment: 1,
-			},
-		},
-	})
+
+	// 绑定JSON请求体
+	var req DraftAddRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.String(http.StatusBadRequest, "请求参数错误: %v", err)
+		return
+	}
+
+	// 构建请求参数
+	draftAddReq := buildDraftAddRequest(&req)
+
+	// 调用API
+	response, err := app.Publish.DraftAdd(ctx.Request.Context(), draftAddReq)
 	if err != nil {
 		ctx.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	ctx.JSON(http.StatusOK, data)
+	ctx.JSON(http.StatusOK, response)
 }
 
 func APIDraftGet(ctx *gin.Context) {
