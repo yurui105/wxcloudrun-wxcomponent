@@ -6,13 +6,13 @@ import (
 	"github.com/WeixinCloud/wxcloudrun-wxcomponent/comm/wx"
 )
 
-var OfficialAccountApp = make(map[string]*officialAccount.OfficialAccount)
+//var OfficialAccountApp = make(map[string]*officialAccount.OfficialAccount)
 
 func GetOfficialAccount(appid string) (*officialAccount.OfficialAccount, error) {
-	client, ok := OfficialAccountApp[appid]
-	if ok {
-		return client, nil
-	}
+	//client, ok := OfficialAccountApp[appid]
+	//if ok {
+	//	return client, nil
+	//}
 
 	token, err := wx.GetAuthorizerAccessToken(appid)
 	if err != nil {
@@ -32,7 +32,7 @@ func GetOfficialAccount(appid string) (*officialAccount.OfficialAccount, error) 
 		},
 
 		HttpDebug: true,
-		Debug:     false,
+		Debug:     true,
 	})
 
 	app.AccessToken.GetCustomToken = func(key string, refresh bool) object.HashMap {
@@ -45,7 +45,7 @@ func GetOfficialAccount(appid string) (*officialAccount.OfficialAccount, error) 
 	if err != nil {
 		return nil, err
 	}
-	OfficialAccountApp[appid] = app
+	//OfficialAccountApp[appid] = app
 
 	return app, nil
 }
